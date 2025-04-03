@@ -5,20 +5,24 @@ Bu loyiha Flutter dasturchilari uchun Android ilovani `.aab` formatda build qili
 2. PowerShell terminalida quyidagilarni yozing:  
    `notepad $PROFILE`  
    ochilgan faylga shuni yozing:
+```
+function deploy {
+   powershell -ExecutionPolicy Bypass -File "$PWD\deploy.ps1"
+}
+```
 
-   function deploy {
-       powershell -ExecutionPolicy Bypass -File "$PWD\deploy.ps1"
-   }
+3. Faylni saqlang va terminalni qayta oching.
 
-3. Faylni saqlang va terminalni qayta oching. Endi siz terminalda `deploy` deb yozsangiz, skript avtomatik ishlaydi.
-
-Mana sizga ishlab turgan `deploy.ps1` faylining to‘liq, yakuniy kodi. Bu versiyani o‘zgartirmang:
-
+4. Yangi fayl yarating: ``deploy.ps1`` (bu Windows PowerShell skript fayli).
+5. Ichiga quyidagi kodni yozing (bu ishlab turgan, testdan o‘tgan versiya):
+```
 $localPropsPath = "android\local.properties"
 $lines = Get-Content $localPropsPath
+
 $currentVersionCodeLine = $lines | Where-Object { $_ -match "flutter.versionCode" }
 $currentVersionCode = ($currentVersionCodeLine -split "=")[1].Trim()
 $newVersionCode = [int]$currentVersionCode + 1
+
 $newLines = @()
 foreach ($line in $lines) {
     if ($line -match "flutter.versionCode") {
@@ -27,13 +31,32 @@ foreach ($line in $lines) {
         $newLines += $line
     }
 }
+
 $newLines | Set-Content $localPropsPath
+
 Push-Location android
 cmd /c "gradlew.bat bundleRelease"
 Pop-Location
+
 Write-Host "flutter.versionCode $newVersionCode ga oshirildi!"
 Write-Host @"
-📦 .aab fayl: android\app\build\outputs\bundle\release\app-release.aab
+.aab fayl: android\app\build\outputs\bundle\release\app-release.aab
 "@
+```
 
-Agar sizning `android/local.properties` faylingizda `flutter.versionCode=6` kabi qator mavjud bo‘lsa, bu skript mukammal ishlaydi. Fayl yo‘q bo‘lsa yoki qiymat noto‘g‘ri bo‘lsa, skript xato beradi. Shuningdek, `gradlew.bat` fayli `android/` ichida mavjud bo‘lishi kerak. Bu fayl Flutter loyihasi yaratgan build faylidir. Proguard yoki minify xatoliklar chiqmasligi uchun `proguard-rules.pro` fayl ham bo‘sh holatda yaratilgan bo‘lishi mumkin. Bu skript orqali siz har bir release buildda `versionCode` ni yangilab, ilovani avtomatik tarzda build qilasiz. Keyinchalik bu jarayonga `.aab` faylni Play Console’ga avtomatik yuklash (`fastlane` orqali), changelog qo‘shish, GitHub tag yaratish, yoki hatto Telegramga xabar yuborish funksiyalarini ham qo
+
+6. Faylni saqlang. PowerShell terminalni yoki Android Studio’ni qayta ishga tushiring.
+
+Endi siz terminalda `deploy` deb yozsangiz, quyidagi ishlar avtomatik bo‘ladi:
+- `flutter.versionCode` avtomatik oshadi
+- `local.properties` faylga yoziladi
+- `gradlew.bat` orqali `.aab` fayl build qilinadi
+- build fayl manzili ko‘rsatiladi
+
+.aab fayl: `android/app/build/outputs/bundle/release/app-release.aab`
+
+---
+
+Bu usul sizga har safar qo‘lda versiya o‘zgartirish va build yozishdan qutqaradi. Siz vaqt tejaysiz, xatolik ehtimoli kamayadi. Keyinchalik bu tizimga `fastlane` qo‘shib, Play Store’ga avtomatik yuklashni ham amalga oshirishingiz mumkin, kengaytirib chiqsa boladi bemalol.
+
+
